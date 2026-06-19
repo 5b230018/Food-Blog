@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>陳柏睿 | 個人前端作品集</title>
+    
+    <style>
+        /* === 1. 極簡色彩與 iOS 毛玻璃變數 === */
+        :root {
+            --bg-color: #fdfdfd;
+            --glass-bg: rgba(255, 255, 255, 0.4); 
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-highlight: rgba(255, 255, 255, 0.7);
+            --glass-shine: rgba(255, 255, 255, 0.55);
+            --text-main: #1d1d1f;
+            --text-muted: #86868b;
+            --gold-primary: #c59b27;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --bg-gradient: radial-gradient(circle at 20% 40%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+                           radial-gradient(circle at 80% 60%, rgba(0, 0, 0, 0.05) 0%, transparent 50%);
+
+            /* 彈簧阻尼曲線 */
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --spring-soft: cubic-bezier(0.22, 1.4, 0.36, 1);
+            --press: cubic-bezier(0.4, 0, 0.2, 1); /* 按壓專用沉穩曲線 */
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #080808;
+            --glass-bg: rgba(30, 30, 30, 0.45); 
+            --glass-border: rgba(212, 175, 55, 0.15); 
+            --glass-highlight: rgba(255, 255, 255, 0.12);
+            --glass-shine: rgba(255, 255, 255, 0.1);
+            --text-main: #f5f5f7;
+            --text-muted: #a1a1a6;
+            --card-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            --bg-gradient: radial-gradient(circle at 10% 30%, rgba(212, 175, 55, 0.12) 0%, transparent 50%),
+                           radial-gradient(circle at 90% 70%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+        }
+
+        html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            background-image: var(--bg-gradient); 
+            background-attachment: fixed; 
+            color: var(--text-main);
+            margin: 0; padding: 0;
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+
+        /* === 2. 滾動大標題 (Large Title) 與導覽列 === */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; 
+            position: sticky; top: 0; z-index: 1000;
+            background: transparent; border-bottom: 1px solid transparent;
+            transition: all 0.4s var(--spring);
+        }
+        
+        /* 滾動後才出現的毛玻璃與底線 */
+        header.scrolled {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        /* 導覽列中間的小標題 (平常隱藏，滾動才出現) */
+        .header-title {
+            position: absolute; left: 50%; transform: translate(-50%, 20px);
+            font-size: 1.1em; font-weight: 700; color: var(--text-main);
+            opacity: 0; transition: all 0.4s var(--spring); pointer-events: none;
+        }
+        header.scrolled .header-title { opacity: 1; transform: translate(-50%, 0); }
+
+        .nav-links { display: flex; gap: 30px; }
+        .nav-links a {
+            color: var(--text-main); text-decoration: none; font-weight: 600;
+            font-size: 0.95em; opacity: 0.7; transition: all 0.3s ease;
+        }
+        .nav-links a:hover { opacity: 1; color: var(--gold-primary); }
+
+        /* 大標題區塊 */
+        .large-title-container {
+            max-width: 1200px; margin: 0 auto; padding: 20px 20px 10px 20px;
+            transition: opacity 0.3s, transform 0.4s;
+        }
+        .large-title { font-size: 2.8em; font-weight: 800; margin: 0; letter-spacing: 1px; color: var(--text-main); }
+        .large-title span { color: var(--gold-primary); font-weight: 300; }
+
+        /* === 3. iOS 真實物理開關 (Toggle Switch) === */
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 10px; }
+        .theme-switch { position: relative; display: inline-block; width: 56px; height: 32px; }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+        
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(150, 150, 150, 0.2); 
+            border: 1px solid var(--glass-border);
+            border-radius: 34px; transition: 0.4s var(--spring);
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 24px; width: 24px; left: 3px; bottom: 3px;
+            background-color: var(--text-main); border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: 0.5s var(--spring);
+            display: flex; justify-content: center; align-items: center;
+        }
+        /* 開關按下時的微縮阻尼 */
+        .slider:active:before { width: 32px; }
+        
+        /* 深色模式(勾選狀態) */
+        input:checked + .slider { background-color: var(--gold-primary); border-color: var(--gold-primary); }
+        input:checked + .slider:before { transform: translateX(24px); background-color: #fff; }
+        input:checked + .slider:active:before { transform: translateX(16px); }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 10px 20px 40px 20px; }
+
+        /* 個人介紹 */
+        .intro-section {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 32px; /* 連續圓角 (Squircle) */
+            padding: 40px 50px; margin-bottom: 50px;
+            box-shadow: var(--card-shadow), inset 0 1px 0 0 var(--glass-highlight);
+        }
+        .intro-section h2 { color: var(--gold-primary); margin: 0 0 15px 0; font-size: 1.6em; }
+        .intro-section p { font-size: 1.1em; line-height: 1.8; margin: 0; }
+
+        /* === 4. iOS 膠囊滑動指示器 (Segmented Control) === */
+        .filter-wrapper {
+            position: relative; display: inline-flex; align-items: center;
+            background: rgba(150, 150, 150, 0.1); 
+            padding: 6px; border-radius: 40px; border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            margin: 0 auto 40px auto;
+        }
+        
+        /* 獨立滑動的金色膠囊背景 */
+        .filter-indicator {
+            position: absolute; top: 6px; left: 6px; height: calc(100% - 12px);
+            background: var(--gold-primary); border-radius: 30px;
+            transition: all 0.5s var(--spring); z-index: 1;
+            box-shadow: 0 4px 12px rgba(197, 155, 39, 0.4);
+        }
+
+        .filter-btn {
+            position: relative; z-index: 2; background: transparent; border: none;
+            color: var(--text-main); padding: 10px 24px; border-radius: 30px;
+            cursor: pointer; font-size: 0.95em; font-weight: 600;
+            transition: color 0.3s ease, transform 0.2s;
+        }
+        .filter-btn:active { transform: scale(0.92); }
+        .filter-btn.active { color: #fff; }
+        [data-theme="light"] .filter-btn.active { color: #000; }
+
+        /* === 5. 質感網格與「卡片按壓回饋」 === */
+        .restaurant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
+
+        @media (hover: hover) {
+            .restaurant-grid:hover .card { opacity: 0.6; filter: blur(2px) grayscale(10%); transform: scale(0.98); }
+            .restaurant-grid .card:hover {
+                opacity: 1; filter: blur(0) grayscale(0);
+                transform: translateY(-8px) scale(1.02);
+                box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 1px 0 0 var(--glass-highlight);
+                z-index: 2;
+            }
+            .card:hover::after { left: 125%; }
+            .card:hover .img-container img { transform: scale(1.08); } 
+            .action-icon:hover { background: var(--text-main); color: var(--bg-color); transform: scale(1.15) translateY(-2px); }
+        }
+
+        .card {
+            position: relative; background: var(--glass-bg);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px; /* iOS 連續圓角 */
+            padding: 12px; overflow: hidden;
+            box-shadow: var(--card-shadow), inset 0 1px 0 0 var(--glass-highlight);
+            /* 正常狀態下的平滑過渡 */
+            transition: transform 0.55s var(--spring), box-shadow 0.45s ease, filter 0.4s ease, opacity 0.4s ease;
+            display: flex; flex-direction: column; cursor: pointer;
+            will-change: transform, opacity;
+        }
+        
+        /* 🌟 核心：卡片點擊時的實體按壓感 (App Icon Press) 🌟 */
+        .card:active {
+            transform: scale(0.94) translateY(0) !important; 
+            filter: brightness(0.8) !important;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3) !important;
+            transition: transform 0.15s var(--press), filter 0.15s, box-shadow 0.15s !important;
+        }
+
+        .card::after {
+            content: ''; position: absolute; top: 0; left: -75%; width: 50%; height: 100%;
+            background: linear-gradient(115deg, transparent 20%, var(--glass-shine) 50%, transparent 80%);
+            transform: skewX(-15deg); transition: left 0.85s var(--spring-soft);
+            pointer-events: none; z-index: 3;
+        }
+
+        .img-container { width: 100%; height: 260px; border-radius: 22px; overflow: hidden; transform: translateZ(0); }
+        .img-container img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--spring); }
+
+        .card-footer { padding: 16px 8px 8px 8px; display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 1.15em; font-weight: 600; margin: 0; color: var(--text-main); }
+        
+        .action-icon {
+            color: var(--text-main); font-size: 1em; text-decoration: none;
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.05); 
+            width: 38px; height: 38px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            transition: background 0.3s ease, color 0.3s ease, transform 0.5s var(--spring);
+        }
+        
+        /* 按鈕點擊按壓感 */
+        .action-icon:active { transform: scale(0.85); transition: transform 0.1s var(--press); }
+
+        /* Mobile specific optimizations */
+        @media (max-width: 768px) {
+            .card, .intro-section, .filter-wrapper {
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+            .scroll-fade { transform: translateY(20px) scale(1); }
+        }
+
+        #lightbox {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            z-index: 9999; display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+        }
+        #lightbox.active { opacity: 1; pointer-events: auto; }
+        #lightbox img {
+            max-width: 90%; max-height: 90%; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transform: scale(0.85); transition: transform 0.55s var(--spring);
+        }
+        #lightbox.active img { transform: scale(1); }
+        #lightbox-close {
+            position: absolute; top: 30px; right: 40px; color: white;
+            font-size: 40px; cursor: pointer; font-weight: 200; transition: transform 0.4s var(--spring);
+        }
+        #lightbox-close:hover { transform: scale(1.2) rotate(90deg); }
+        #lightbox-close:active { transform: scale(0.85) rotate(90deg); }
+        .scroll-fade { opacity: 0; transform: translateY(35px) scale(0.96); transition: opacity 0.6s ease, transform 0.7s var(--spring); }
+        .scroll-fade.is-visible { opacity: 1; transform: translateY(0) scale(1); }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- DOMPurify to sanitize Markdown HTML -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+    <style>
+        /* === 8. 新增功能 UI 樣式 (撰寫文章、Modal) === */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            z-index: 10000; display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .modal-content {
+            background: var(--bg-color); width: 90%; max-width: 800px; max-height: 90vh;
+            border-radius: 24px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border); overflow-y: auto;
+            transform: translateY(20px); transition: transform 0.3s var(--spring);
+            color: var(--text-main);
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; color: var(--gold-primary); }
+        .modal-close { cursor: pointer; font-size: 1.5em; background: none; border: none; color: var(--text-main); }
+        
+        .form-group { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-weight: 600; font-size: 0.95em; }
+        .form-control {
+            background: rgba(150, 150, 150, 0.1); border: 1px solid var(--glass-border);
+            padding: 12px; border-radius: 12px; color: var(--text-main); font-family: inherit;
+        }
+        .form-control option {
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+        .form-control:focus { outline: none; border-color: var(--gold-primary); }
+        textarea.form-control { min-height: 200px; resize: vertical; }
+        
+        .btn-primary {
+            background: var(--gold-primary); color: white; border: none; padding: 12px 24px;
+            border-radius: 30px; font-weight: 600; cursor: pointer; transition: transform 0.2s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <header id="main-header">
+        <div class="nav-links">
+            <a href="#about" onclick="filterMyPosts(null)">關於我</a>
+            <a href="#gallery" onclick="filterMyPosts(null)">影像藝廊</a>
+            <a href="#gallery" id="my-page-link" onclick="filterMyPosts(currentUser ? currentUser.uid : null)" style="display: none; color: var(--gold-primary);">我的主頁</a>
+        </div>
+        
+        <div class="header-title">Portfolio</div>
+
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div id="auth-container" style="display: flex; align-items: center; gap: 10px;">
+                <button id="write-btn" style="padding: 6px 15px; font-size: 0.85em; background: transparent; color: var(--text-main); border: 1px solid var(--glass-border); border-radius: 20px; cursor: pointer; font-weight: 600; display: none;"><i class="fas fa-pen"></i> 寫文章</button>
+                <span id="user-info" style="font-size: 0.9em; display: none;"></span>
+                <button id="auth-btn" style="padding: 6px 15px; font-size: 0.85em; background: var(--gold-primary); color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 10px rgba(197, 155, 39, 0.3); transition: transform 0.2s, filter 0.2s;">Login with Google</button>
+            </div>
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch" for="themeToggle">
+                    <input type="checkbox" id="themeToggle" />
+                    <div class="slider"></div>
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <div class="large-title-container" id="largeTitle">
+        <h1 class="large-title">陳柏睿 <span>Portfolio</span></h1>
+    </div>
+
+    <div class="container">
+        
+        <section id="about" class="intro-section scroll-fade">
+            <h2>👨‍💻 關於我</h2>
+            <p>哈囉！我是 <strong>陳柏睿</strong>，目前就讀五專資工三甲。<br>
+            平時熱愛攝影與發掘美食。<br>
+            這個單頁式網站 (SPA) 結合了我的前端網頁設計技術，收錄了我跑店的足跡與愛店的攝影圖集。</p>
+        </section>
+
+        <section id="gallery" style="text-align: center;">
+            <div class="filter-wrapper scroll-fade">
+                <div class="filter-indicator" id="filterIndicator"></div>
+                <div id="filterContainer" style="display: flex; position: relative; z-index: 2;"></div>
+            </div>
+
+            <div class="restaurant-grid" id="restaurantGrid" style="text-align: left;"></div>
+        </section>
+
+    </div>
+
+    <div id="lightbox">
+        <span id="lightbox-close">×</span>
+        <img id="lightbox-img" src="" alt="Enlarged Photo">
+    </div>
+
+    <!-- 撰寫文章 Modal -->
+    <div id="write-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-pen"></i> 撰寫美食文章</h2>
+                <button class="modal-close" onclick="closeWriteModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="form-group">
+                <label>文章標題</label>
+                <input type="text" id="post-title" class="form-control" placeholder="例如：台南必吃早午餐...">
+            </div>
+            <div class="form-group">
+                <label>分類</label>
+                <select id="post-category" class="form-control">
+                    <option value="早午餐">早午餐</option>
+                    <option value="咖啡廳">咖啡廳</option>
+                    <option value="義式料理">義式料理</option>
+                    <option value="日式料理">日式料理</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>封面圖片上傳 (imgBB)</label>
+                <input type="file" id="post-image-upload" class="form-control" accept="image/*">
+                <input type="hidden" id="post-image-url">
+                <div id="image-upload-status" style="font-size: 0.85em; color: var(--gold-primary);"></div>
+            </div>
+            <div class="form-group">
+                <label>Markdown 內文 <a href="https://markdown.tw/" target="_blank" style="font-size: 0.8em; color: var(--gold-primary);">語法教學</a></label>
+                <textarea id="post-content" class="form-control" placeholder="使用 Markdown 語法撰寫您的美食體驗..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Google Maps Iframe 程式碼 (選填)</label>
+                <input type="text" id="post-map-iframe" class="form-control" placeholder='<iframe src="..."></iframe>'>
+            </div>
+            <button id="submit-post-btn" class="btn-primary" style="width: 100%; margin-top: 10px;">
+                發佈文章
+            </button>
+        </div>
+    </div>
+
+    <!-- 文章詳細頁面 Modal -->
+    <div id="article-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 900px; padding: 0;">
+            <div style="position: relative; width: 100%; max-height: 500px; border-radius: 24px 24px 0 0; overflow: hidden; background: rgba(0,0,0,0.2); display: flex; justify-content: center; align-items: center;">
+                <img id="article-cover" src="" style="width: 100%; max-height: 500px; object-fit: contain;">
+                <button class="modal-close" onclick="closeArticleModal()" style="position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); z-index: 10;"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 40px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                    <div>
+                        <span id="article-category" style="background: var(--gold-primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;"></span>
+                        <h1 id="article-title" style="margin: 15px 0 5px 0; font-size: 2.2em; color: var(--gold-primary);"></h1>
+                        <div style="display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.9em;">
+                            <img id="article-author-avatar" src="" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+                            <span id="article-author-name"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Markdown Content -->
+                <div id="article-content" style="line-height: 1.8; font-size: 1.1em; margin-bottom: 40px;"></div>
+                
+                <!-- Google Map -->
+                <div id="article-map-container" style="width: 100%; height: 350px; border-radius: 20px; overflow: hidden; display: none; margin-bottom: 20px;"></div>
+                
+                <!-- Social Interactions: Likes & Comments -->
+                <div style="border-top: 1px solid var(--glass-border); padding-top: 20px;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px;">
+                        <button id="like-btn" style="background: transparent; border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600; transition: transform 0.2s, background 0.3s;">
+                            <i class="far fa-heart"></i> <span id="like-count">0</span>
+                        </button>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 15px; color: var(--gold-primary);">留言板</h3>
+                    <div id="comments-section" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; max-height: 300px; overflow-y: auto;">
+                        <!-- Comments will be injected here -->
+                    </div>
+                    
+                    <div id="comment-input-area" style="display: none; display: flex; gap: 10px;">
+                        <input type="text" id="comment-input" class="form-control" style="flex: 1;" placeholder="寫下您的留言...">
+                        <button id="submit-comment-btn" class="btn-primary" style="padding: 8px 16px; border-radius: 12px;"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <div id="login-to-comment-msg" style="color: var(--text-muted); font-size: 0.9em; text-align: center;">請登入後留言</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    /* === 2. 滾動大標題邏輯 === */
+    const header = document.getElementById('main-header');
+    const largeTitle = document.getElementById('largeTitle');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+            header.classList.add('scrolled');
+            if (largeTitle) largeTitle.style.opacity = '0';
+        } else {
+            header.classList.remove('scrolled');
+            if (largeTitle) largeTitle.style.opacity = '1';
+        }
+    });
+
+    /* === 3. 深淺色實體開關 === */
+    const themeToggle = document.getElementById('themeToggle');
+    const htmlElement = document.documentElement;
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    
+    // 設定初始狀態：深色模式時 checkbox 為 checked
+    htmlElement.setAttribute('data-theme', savedTheme);
+    if (themeToggle) themeToggle.checked = (savedTheme === 'dark');
+
+    if (themeToggle) {
+        themeToggle.addEventListener('change', (e) => {
+            const newTheme = e.target.checked ? 'dark' : 'light';
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+    }
+
+    /* === 5. 精準地圖邏輯 === */
+    window.openMap = function(name, city, customUrl) {
+        if (customUrl) {
+            window.open(customUrl, '_blank');
+        } else {
+            const query = encodeURIComponent(name + ' ' + city);
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
+            window.open(mapUrl, '_blank');
+        }
+    }
+
+    // Dynamic categories and cards will be handled by main.js
+    
+    // Resize listener for indicator
+    window.addEventListener('resize', () => {
+        const activeBtn = document.querySelector('.filter-btn.active');
+        if (activeBtn && window.updateIndicator) {
+            window.updateIndicator(activeBtn);
+        }
+    });
+
+    /* === 6. 燈箱特效 (保留給影像藝廊) === */
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxClose = document.getElementById('lightbox-close');
+
+    window.openLightbox = function(imgSrc) {
+        lightboxImg.src = imgSrc;
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden'; 
+    }
+
+    lightboxClose.onclick = closeLightbox;
+    lightbox.onclick = function(e) { if(e.target !== lightboxImg) closeLightbox(); }
+
+    function closeLightbox() {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+
+    /* === 7. 滾動淡入 === */
+    window.applyScrollAnimation = function() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: "0px 0px -20px 0px" });
+        document.querySelectorAll('.scroll-fade').forEach(el => observer.observe(el));
+    }
+
+
+    // Simple press effect for auth button
+    const authBtnEffect = document.getElementById('auth-btn');
+    if (authBtnEffect) {
+        authBtnEffect.addEventListener('mousedown', () => { authBtnEffect.style.transform = 'scale(0.9)'; });
+        authBtnEffect.addEventListener('mouseup', () => { authBtnEffect.style.transform = 'scale(1)'; });
+        authBtnEffect.addEventListener('mouseleave', () => { authBtnEffect.style.transform = 'scale(1)'; });
+        authBtnEffect.addEventListener('mouseenter', () => { authBtnEffect.style.filter = 'brightness(1.1)'; });
+        authBtnEffect.addEventListener('mouseleave', () => { authBtnEffect.style.filter = 'brightness(1)'; });
+    }
+</script>
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>
